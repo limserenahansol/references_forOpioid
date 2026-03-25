@@ -40,6 +40,84 @@ python build_from_xlsx.py \
 | IV self-administration | Remifentanil IVSA | 5 |
 | IV self-administration | Review/Methods | 4 |
 
+## Hierarchical roadmap (narrowing the list)
+
+Use the CSV in decision order: **`roadmap_ivsa`** → **`roadmap_mouse_yn`** (or **`roadmap_species`**) → **`roadmap_circuit`**. Circuit labels (**A–E**, **Z**, **Multi**) are auto-tagged from `title`, `brain_region`, `method_family`, and `neuroscience_methods` (keyword heuristics). Always confirm in the original paper.
+
+### Step 1: Intravenous self-administration (IVSA)?
+
+| `roadmap_ivsa` | Meaning | Count |
+| --- | --- | ---: |
+| **yes** | IVSA model | 45 |
+| **no** | Experimenter-administered injection (not IVSA) | 26 |
+
+### Step 2: Mouse? (yes / no / partial / n/a)
+
+| `roadmap_mouse_yn` | How to read it | Count |
+| --- | --- | ---: |
+| **yes** | Mouse-only (or clearly mouse primary) experimental row | 25 |
+| **no** | Rat-only, other species, or rodent unspecified | 36 |
+| **partial** | Explicit mouse + rat in `species` | 2 |
+| **n/a** | Review / methods row; use `species` and title instead | 8 |
+
+**Finer species bucket** (`roadmap_species`, optional third sort key):
+
+| `roadmap_species` | Count |
+| --- | ---: |
+| Rat | 35 |
+| Mouse | 25 |
+| Review / cross-species (see `species` column) | 8 |
+| Mouse + rat | 2 |
+| Rodent (unspecified) | 1 |
+
+### Step 3: Circuit / region bucket (`roadmap_circuit`)
+
+| Code | What it roughly marks |
+| --- | --- |
+| **A** | Mesolimbic & striatum: VTA, NAc, dorsal striatum, ventral pallidum, terminal dopamine readouts |
+| **B** | Prefrontal / prelimbic cortex and cortico-striatal or cortico-midbrain emphasis |
+| **C** | Extended amygdala: amygdala, CeA, BNST |
+| **D** | Thalamus (incl. PVT), habenula, hypothalamus / LH |
+| **E** | Hippocampus (e.g., CA1) |
+| **Multi** | Two or more buckets tied (keywords overlap) |
+| **Z** | Reviews, purely behavioral IVSA rows without region keywords, or not tagged from this index |
+
+**Counts in this snapshot:**
+
+| `roadmap_circuit` | N |
+| --- | ---: |
+| Z — IVSA behavioral / no circuit tag in index | 22 |
+| A — Mesolimbic & striatum (VTA, NAc, striatum, VP, dopamine endpoints) | 18 |
+| Z — Not tagged / distributed or unclear | 9 |
+| Z — Review / survey (use title for topics) | 8 |
+| B — Cortex & cortico-striatal / cortico-midbrain | 5 |
+| D — Thalamus, habenula, hypothalamus | 3 |
+| C — Extended amygdala / BNST / CeA | 2 |
+| E — Hippocampus | 1 |
+| Multi (A + C) — overlapping keywords; check `title` / `brain_region` | 1 |
+| Multi (A + B) — overlapping keywords; check `title` / `brain_region` | 1 |
+| Multi (A + D) — overlapping keywords; check `title` / `brain_region` | 1 |
+
+### Visual map (same decisions)
+
+```mermaid
+flowchart TD
+  R[All rows in references_unified.csv] --> Q1{roadmap_ivsa}
+  Q1 -->|yes| IVSA[IVSA papers]
+  Q1 -->|no| INJ[Experimenter injection papers]
+  IVSA --> Q2{roadmap_species}
+  INJ --> Q2
+  Q2 --> MS[roadmap_mouse_yn: yes no partial n/a]
+  MS --> Q3{roadmap_circuit A–E, Multi, Z}
+  Q3 --> DONE[Shortlist + open url column]
+```
+
+### Quick filter examples (spreadsheet / pandas)
+
+- **IVSA + mouse + PFC-ish:** `roadmap_ivsa` = yes, `roadmap_mouse_yn` = yes, `roadmap_circuit` contains `B`.
+- **Injection + NAc / VTA:** `roadmap_ivsa` = no, sort `roadmap_circuit` for **A**.
+- **In vivo imaging during behavior:** filter `in_vivo_imaging` = yes (orthogonal to the roadmap steps).
+
 ## Column guide (`references_unified.csv`)
 
 | Column | Meaning |
@@ -64,3 +142,7 @@ python build_from_xlsx.py \
 | `confidence` | Indexing confidence |
 | `notes` | Extra notes (IVSA set) |
 | `url` | PubMed or publisher link |
+| `roadmap_ivsa` | **yes** = IVSA; **no** = experimenter-administered injection |
+| `roadmap_mouse_yn` | **yes** / **no** / **partial** / **n/a** for reviews (mouse gate) |
+| `roadmap_species` | Mouse vs rat vs mixed vs review-oriented grouping (quick filter) |
+| `roadmap_circuit` | Circuit bucket **A–E**, **Multi**, or **Z** (keyword heuristic; see README roadmap) |
